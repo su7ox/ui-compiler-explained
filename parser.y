@@ -14,16 +14,14 @@ extern void close_log(void);
 void yyerror(const char *msg);
 %}
 
-/* ── Semantic value types ──────────────────────────────────── */
 %union {
     int    ival;
     double fval;
     char  *sval;
 }
 
-/* ── Token declarations (must mirror the enum in lexer.l) ─── */
 
-/* Keywords */
+
 %token TOK_INT TOK_FLOAT TOK_DOUBLE TOK_CHAR TOK_BOOL
 %token TOK_VOID TOK_LONG TOK_SHORT TOK_UNSIGNED TOK_SIGNED
 %token TOK_CONST TOK_AUTO TOK_RETURN
@@ -34,16 +32,16 @@ void yyerror(const char *msg);
 %token TOK_TEMPLATE TOK_TYPENAME TOK_TRY TOK_CATCH TOK_THROW
 %token TOK_INCLUDE TOK_DEFINE
 
-/* Literals — carry semantic values */
+
 %token <ival> TOK_INTEGER_LIT
 %token <fval> TOK_FLOAT_LIT
 %token <sval> TOK_STRING_LIT
 %token <sval> TOK_CHAR_LIT
 
-/* Identifier — carries its name */
+
 %token <sval> TOK_IDENTIFIER
 
-/* Multi-char operators */
+
 %token TOK_INC TOK_DEC
 %token TOK_AND TOK_OR
 %token TOK_EQ  TOK_NEQ
@@ -55,9 +53,7 @@ void yyerror(const char *msg);
 %token TOK_AND_EQ  TOK_OR_EQ   TOK_XOR_EQ
 %token TOK_LSHIFT_EQ TOK_RSHIFT_EQ
 
-/* Preprocessor / comments are consumed by the lexer — not declared here */
 
-/* ── Operator precedence (lowest → highest) ────────────────── */
 %right '=' TOK_PLUS_EQ TOK_MINUS_EQ TOK_MUL_EQ TOK_DIV_EQ TOK_MOD_EQ
 %right TOK_AND_EQ TOK_OR_EQ TOK_XOR_EQ TOK_LSHIFT_EQ TOK_RSHIFT_EQ
 %left  TOK_OR
@@ -73,18 +69,15 @@ void yyerror(const char *msg);
 %right '!' '~' TOK_INC TOK_DEC UMINUS
 %left  '(' ')' '[' ']' TOK_ARROW '.' TOK_SCOPE
 
-/* ── Non-terminal types ─────────────────────────────────────── */
+
 %type <sval> type_spec expr unary_expr primary_expr
 
 %%
 
-/* ============================================================
- *  GRAMMAR RULES
- * ============================================================ */
+// GRAMMAR RULES
 
-/* Top-level: a program is a sequence of declarations / statements */
 program
-    : /* empty */
+    : 
     | program top_level_decl
     ;
 
@@ -95,11 +88,9 @@ top_level_decl
     | struct_decl
     | function_def
     | var_decl
-    | ';'                        /* stray semicolons */
+    | ';'                        
     ;
 
-
-/* ── Namespace ─────────────────────────────────────────────── */
 namespace_decl
     : TOK_NAMESPACE TOK_IDENTIFIER '{' program '}'
     ;
@@ -110,7 +101,7 @@ using_decl
     ;
 
 
-/* ── Class / Struct ────────────────────────────────────────── */
+/* Class / Struct */
 class_decl
     : TOK_CLASS TOK_IDENTIFIER '{' member_list '}' ';'
     | TOK_CLASS TOK_IDENTIFIER ':' access_spec TOK_IDENTIFIER
@@ -138,7 +129,7 @@ member_decl
     ;
 
 
-/* ── Type specifiers ───────────────────────────────────────── */
+/* Type specifiers  */
 type_spec
     : TOK_INT       { $$ = "int";      }
     | TOK_FLOAT     { $$ = "float";    }
@@ -152,11 +143,11 @@ type_spec
     | TOK_SIGNED    { $$ = "signed";   }
     | TOK_CONST type_spec { $$ = $2;   }
     | TOK_AUTO      { $$ = "auto";     }
-    | TOK_IDENTIFIER { $$ = $1;        }   /* user-defined types */
+    | TOK_IDENTIFIER { $$ = $1;        }   
     ;
 
 
-/* ── Variable declarations ─────────────────────────────────── */
+
 var_decl
     : type_spec TOK_IDENTIFIER ';'
     | type_spec TOK_IDENTIFIER '=' expr ';'
@@ -167,12 +158,12 @@ var_decl
     ;
 
 
-/* ── Function prototype ────────────────────────────────────── */
+
 function_proto
     : type_spec TOK_IDENTIFIER '(' param_list ')' ';'
     ;
 
-/* ── Function definition ───────────────────────────────────── */
+
 function_def
     : type_spec TOK_IDENTIFIER '(' param_list ')' compound_stmt
     ;
@@ -189,11 +180,11 @@ param
     | type_spec TOK_IDENTIFIER '[' ']'
     | type_spec '*' TOK_IDENTIFIER
     | type_spec '&' TOK_IDENTIFIER
-    | type_spec                         /* unnamed param */
+    | type_spec                        
     ;
 
 
-/* ── Statements ────────────────────────────────────────────── */
+/* Statements */
 compound_stmt
     : '{' stmt_list '}'
     ;
@@ -282,7 +273,7 @@ catch_clause
     ;
 
 
-/* ── Expressions ───────────────────────────────────────────── */
+/* Expressions */
 expr
     : expr '='          expr  { $$ = $1; }
     | expr TOK_PLUS_EQ  expr  { $$ = $1; }
@@ -318,7 +309,7 @@ expr
     | expr '.' TOK_IDENTIFIER { $$ = $1; }
     | expr TOK_ARROW TOK_IDENTIFIER { $$ = $1; }
     | expr TOK_SCOPE TOK_IDENTIFIER { $$ = $1; }
-    | expr '(' arg_list ')'   { $$ = $1; }   /* function call */
+    | expr '(' arg_list ')'   { $$ = $1; }   
     | unary_expr              { $$ = $1; }
     ;
 
@@ -327,8 +318,8 @@ unary_expr
     | '+' expr %prec UMINUS  { $$ = $2; }
     | '!' expr               { $$ = $2; }
     | '~' expr               { $$ = $2; }
-    | '*' expr %prec UMINUS  { $$ = $2; }   /* dereference */
-    | '&' expr %prec UMINUS  { $$ = $2; }   /* address-of  */
+    | '*' expr %prec UMINUS  { $$ = $2; }   
+    | '&' expr %prec UMINUS  { $$ = $2; }   
     | TOK_INC expr           { $$ = $2; }
     | TOK_DEC expr           { $$ = $2; }
     | primary_expr           { $$ = $1; }
@@ -353,18 +344,13 @@ arg_list
 
 %%
 
-/* ================================================================
- *  Error handler
- * ================================================================ */
+
 void yyerror(const char *msg)
 {
     fprintf(stderr, "Parse error at line %d: %s (near '%s')\n",
             yylineno, msg, yytext);
 }
-
-/* ================================================================
- *  main — entry point when parser is the driver
- * ================================================================ */
+main — entry point when parser is the driver
 int main(int argc, char *argv[])
 {
     extern FILE *yyin;
@@ -380,9 +366,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    open_log("lexer_output.txt");   /* start token log */
-    int result = yyparse();         /* drives yylex() internally */
-    close_log();                    /* flush and close log */
+    open_log("lexer_output.txt");   
+    int result = yyparse();         
+    close_log();                   
 
     fclose(yyin);
 
